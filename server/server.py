@@ -4,7 +4,7 @@ import json
 
 rooms = {}
 
-async def handle_client(websocket):  # Removed the 'path' argument
+async def handle_client(websocket):
     room = None
     try:
         async for message in websocket:
@@ -41,7 +41,7 @@ async def handle_client(websocket):  # Removed the 'path' argument
 async def server():
     async with websockets.serve(handle_client, "localhost", 5000):
         print("Server started on ws://localhost:5000")
-        await asyncio.Future()  # Keep running
+        await asyncio.Future()
 
 if __name__ == "__main__":
     asyncio.run(server())

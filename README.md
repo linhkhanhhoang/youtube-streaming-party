@@ -23,6 +23,8 @@ Follow these instructions to run the client and server locally.
    cd client/streaming-client
    npm install
    npm start
+   npm install react-router-dom
+   npm install react-youtube
    ```
 
 ### 2. Setting Up the Python WebSocket Server

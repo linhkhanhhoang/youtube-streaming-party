@@ -1,6 +1,9 @@
 import asyncio
 import websockets
 import json
+import re
+
+YOUTUBE_VIDEO_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]{11}$')
 
 rooms = {}
 
@@ -44,11 +47,14 @@ async def handle_client(websocket):
                         await websocket.send(json.dumps({"type": "SET_VIDEO", "video_id": video_id}))
 
             # === Host sets video ===
-            elif action == "SET_VIDEO" and is_host and room in rooms:
+            elif action == "SET_VIDEO" and room_id in rooms:
                 video_id = data.get("video_id")
-                rooms[room]["video_id"] = video_id
-                msg = json.dumps({"type": "SET_VIDEO", "video_id": video_id})
-                await asyncio.gather(*(ws.send(msg) for ws in rooms[room]["clients"]))
+                if not video_id or not YOUTUBE_VIDEO_ID_PATTERN.match(video_id):
+                    await websocket.send(json.dumps({"system": "Invalid YouTube Video ID"}))
+                else:
+                    rooms[room_id]["video_id"] = video_id
+                    msg = json.dumps({"type": "SET_VIDEO", "video_id": video_id})
+                    await asyncio.gather(*(ws.send(msg) for ws in rooms[room_id]["clients"]))
 
             # === Host controls playback ===
             elif action in ["PLAY", "PAUSE"] and is_host and room in rooms:

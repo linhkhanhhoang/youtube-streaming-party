@@ -6,6 +6,8 @@ rooms = {}
 
 async def handle_client(websocket):
     room = None
+    is_host = False
+
     try:
         async for message in websocket:
             data = json.loads(message)
@@ -13,29 +15,71 @@ async def handle_client(websocket):
             room_id = data.get("room_id")
             text = data.get("message")
 
-            if action == "CREATE" or action == "JOIN":
-                if room_id not in rooms:
-                    rooms[room_id] = set()
-                rooms[room_id].add(websocket)
-                room = room_id
-                await websocket.send(json.dumps({"system": f"Joined room '{room_id}'"}))
+            # === Create Room ===
+            if action == "CREATE":
+                if room_id in rooms:
+                    await websocket.send(json.dumps({"system": f"Room '{room_id}' already exists"}))
+                else:
+                    rooms[room_id] = {
+                        "host": websocket,
+                        "clients": set([websocket]),
+                        "video_id": None
+                    }
+                    room = room_id
+                    is_host = True
+                    await websocket.send(json.dumps({"system": f"Created and joined room '{room_id}' as host"}))
 
+            # === Join Room ===
+            elif action == "JOIN":
+                if room_id not in rooms:
+                    await websocket.send(json.dumps({"system": f"Room '{room_id}' does not exist"}))
+                else:
+                    rooms[room_id]["clients"].add(websocket)
+                    room = room_id
+                    await websocket.send(json.dumps({"system": f"Joined room '{room_id}'"}))
+
+                    # Sync video on join
+                    video_id = rooms[room_id]["video_id"]
+                    if video_id:
+                        await websocket.send(json.dumps({"type": "SET_VIDEO", "video_id": video_id}))
+
+            # === Host sets video ===
+            elif action == "SET_VIDEO" and is_host and room in rooms:
+                video_id = data.get("video_id")
+                rooms[room]["video_id"] = video_id
+                msg = json.dumps({"type": "SET_VIDEO", "video_id": video_id})
+                await asyncio.gather(*(ws.send(msg) for ws in rooms[room]["clients"]))
+
+            # === Host controls playback ===
+            elif action in ["PLAY", "PAUSE"] and is_host and room in rooms:
+                msg = json.dumps({"type": action})
+                await asyncio.gather(*(ws.send(msg) for ws in rooms[room]["clients"] if ws != websocket))
+
+            # === Chat message ===
             elif action == "MSG" and room and text:
                 if room in rooms:
-                    broadcast_message = json.dumps({"sender": "User", "message": text})
-                    await asyncio.gather(*(ws.send(broadcast_message) for ws in rooms[room] if ws != websocket))
+                    msg = json.dumps({"sender": "User", "message": text})
+                    await asyncio.gather(*(ws.send(msg) for ws in rooms[room]["clients"] if ws != websocket))
 
             elif action == "EXIT":
                 break
 
     except Exception as e:
         print(f"Error: {e}")
-    
+
     finally:
-        if room and websocket in rooms.get(room, set()):
-            rooms[room].remove(websocket)
-            if not rooms[room]:
+        if room and room in rooms:
+            clients = rooms[room]["clients"]
+            clients.discard(websocket)
+
+            if websocket == rooms[room]["host"]:
+                for ws in clients:
+                    await ws.send(json.dumps({"system": "Host ended the session"}))
+                    await ws.close()
                 del rooms[room]
+            elif not clients:
+                del rooms[room]
+
         await websocket.close()
 
 async def server():

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useNavigate, useParams } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useParams } from "react-router-dom";
 import YouTube from "react-youtube";
-
 
 const App = () => {
   const [ws, setWs] = useState(null);
@@ -11,13 +10,19 @@ const App = () => {
   const [messages, setMessages] = useState([]);
   const [connected, setConnected] = useState(false);
   const [inRoom, setInRoom] = useState(false);
+  const [videoId, setVideoId] = useState(null);
+  const [isHost, setIsHost] = useState(false);
+  const [player, setPlayer] = useState(null);
   const params = useParams();
   const currentRoomFromURL = params.roomId;
+  const isHostFromURL = new URLSearchParams(window.location.search).get("host") === "true";
+
 
   useEffect(() => {
     if (ws) {
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
+
         if (data.system) {
           setMessages((prev) => {
             const lastMessage = prev.length > 0 ? prev[prev.length - 1].system : null;
@@ -25,9 +30,19 @@ const App = () => {
               return [...prev, { system: data.system }];
             }
             return prev;
-          });        
-        } else {
-          setMessages((prev) => [...prev, { sender: data.sender, text: data.message }]);
+          });
+        }
+
+        if (data.type === "SET_VIDEO") {
+          setVideoId(data.video_id);
+        }
+
+        if (data.type === "PLAY" && player) {
+          player.playVideo();
+        }
+
+        if (data.type === "PAUSE" && player) {
+          player.pauseVideo();
         }
       };
 
@@ -35,7 +50,7 @@ const App = () => {
         setConnected(false);
       };
     }
-  }, [ws]);
+  }, [ws, player]);
 
   useEffect(() => {
     if (currentRoomFromURL && !ws) {
@@ -44,9 +59,16 @@ const App = () => {
         setConnected(true);
         setWs(websocket);
         websocket.send(JSON.stringify({ action: "JOIN", room_id: currentRoomFromURL }));
+        setIsHost(isHostFromURL); // joining means not the host
       };
     }
-  }, [currentRoomFromURL, ws]);  
+  }, [currentRoomFromURL, ws]);
+
+  const extractYouTubeID = (url) => {
+    const regex = /(?:https?:\/\/)?(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : url; // fallback to raw ID if it's already clean
+  };
 
   const connectToServer = () => {
     const websocket = new WebSocket("ws://localhost:5000");
@@ -55,39 +77,43 @@ const App = () => {
   };
 
   const createRoom = () => {
-    if (ws && newRoom) {
-      ws.send(JSON.stringify({ action: "CREATE", room_id: newRoom }));
-      setRoom(newRoom);
-      setInRoom(true);
-      window.open(`/room/${newRoom}`, "_blank");
+    if (ws && newRoom.trim()) {
+      ws.send(JSON.stringify({ action: "CREATE", room_id: newRoom.trim() }));
+
+      setRoom(newRoom.trim());
+      window.open(`/room/${newRoom.trim()}?host=true`, "_blank");
+    } else {
+      alert("Please enter a room name.");
     }
   };
-  
+
   const joinRoom = () => {
-    if (ws && room) {
-      ws.send(JSON.stringify({ action: "JOIN", room_id: room }));
-      setInRoom(true);
-      window.open(`/room/${room}`, "_blank");
+    if (ws && room.trim()) {
+      ws.send(JSON.stringify({ action: "JOIN", room_id: room.trim() }));
+      setRoom(room.trim());
+      window.open(`/room/${room.trim()}`, "_blank");
+
+    } else {
+      alert("Please enter a room name.");
     }
   };
-  
 
   const sendMessage = () => {
     if (ws && message) {
-      ws.send(JSON.stringify({ action: "MSG", room_id: room, message }));
+      ws.send(JSON.stringify({ action: "MSG", room_id: room || currentRoomFromURL, message }));
       setMessage("");
     }
   };
 
-  // 👇 NEW: YouTube player handlers
-  const onPlayerReady = (event) => {
-    console.log("YouTube Player is ready.");
-  };
-
   const onPlayerStateChange = (event) => {
-    // 1: Playing, 2: Paused
-    console.log("Player state:", event.data);
-    // TODO: Send play/pause state to server for syncing
+    if (!isHost || !ws) return;
+    const roomId = currentRoomFromURL || room;
+
+    if (event.data === 1) {
+      ws.send(JSON.stringify({ action: "PLAY", room_id: roomId }));
+    } else if (event.data === 2) {
+      ws.send(JSON.stringify({ action: "PAUSE", room_id: roomId }));
+    }
   };
 
   return (
@@ -132,13 +158,43 @@ const App = () => {
           />
           <button onClick={sendMessage}>Send</button>
 
-          {/* This shows only if URL is /room/:roomId */}
-          {currentRoomFromURL && (
+          {/* Host sets YouTube video */}
+          {isHost && currentRoomFromURL && (
+            <div style={{ marginTop: "20px" }}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const input = e.target.elements.videoId;
+                  const rawInput = input.value.trim();
+                  const videoIdValue = extractYouTubeID(rawInput);
+                  if (videoIdValue && ws) {
+                    ws.send(JSON.stringify({
+                      action: "SET_VIDEO",
+                      room_id: currentRoomFromURL,
+                      video_id: videoIdValue
+                    }));
+                    input.value = ""; // clear input after submit
+                  }
+                }}
+              >
+              <input
+                type="text"
+                name="videoId"
+                placeholder="Enter YouTube Video ID"
+              />
+              <button type="submit">Set Video</button>
+            </form>
+          </div>
+        )}
+
+
+          {/* YouTube video player */}
+          {currentRoomFromURL && videoId && (
             <div style={{ marginTop: "30px" }}>
               <h3>Now Watching in Room: {currentRoomFromURL}</h3>
               <YouTube
-                videoId="dQw4w9WgXcQ"
-                onReady={onPlayerReady}
+                videoId={videoId}
+                onReady={(event) => setPlayer(event.target)}
                 onStateChange={onPlayerStateChange}
               />
             </div>

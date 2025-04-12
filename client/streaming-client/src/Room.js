@@ -1,14 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import YouTube from "react-youtube";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import {
-  setVideo,
   setPlayerState,
   setPlayerTime,
-  addMessage,
-  setMessages,
-  setSystemMessage,
   setIsHost,
   setRoom
 } from "./store";
@@ -19,10 +15,13 @@ function Room() {
   const location = useLocation();
   const currentRoomFromURL = params.roomId;
   const isHostFromURL = new URLSearchParams(location.search).get("host") === "true";
+  const intervalRef = useRef(null);
   
   const [message, setMessage] = useState("");
   const [requestVideoId, setRequestVideoId] = useState("");
-  
+  const [player, setPlayer] = useState(null);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+
   const dispatch = useDispatch();
   const room = useSelector(state => state.room);
   const isHost = useSelector(state => state.isHost);
@@ -34,11 +33,19 @@ function Room() {
   useEffect(() => {
     dispatch(setRoom(currentRoomFromURL));
     dispatch(setIsHost(isHostFromURL));
-    dispatch({ 
-      type: WS_TO_SERVER_JOIN_ROOM, 
-      payload: { room_id: currentRoomFromURL } 
-    });
   }, [dispatch, currentRoomFromURL, isHostFromURL]);
+
+  useEffect(() => {
+    if (!player || !isPlayerReady || isHost) return;
+
+    if (playerState === "playing") {
+      player.seekTo(currentTime || 0);
+      player.playVideo();
+    } else if (playerState === "paused") {
+      player.seekTo(currentTime || 0);
+      player.pauseVideo();
+    }
+  }, [playerState, currentTime]);
 
 
   const extractYouTubeID = (url) => {
@@ -96,6 +103,8 @@ function Room() {
   };
 
   const onPlayerReady = (event) => {
+    setPlayer(event.target);
+    setIsPlayerReady(true);
     if (playerState === "playing") {
       if (currentTime > 0) {
         event.target.seekTo(currentTime);
@@ -109,10 +118,26 @@ function Room() {
     }
   };
 
-  const onPlay = (event) => {
-    const intervalId = setInterval(() => {
-      const currentTime = event.target.getCurrentTime();
-      if (isHost) {
+  const onPlayerStateChange = (event) => {
+    if (!isHost) return;
+    const playerStatus = event.data;
+    const currentPlayerTime = event.target.getCurrentTime();
+
+    if (playerStatus === window.YT.PlayerState.PLAYING) {
+      dispatch(setPlayerState("playing"));
+      dispatch(setPlayerTime(currentPlayerTime));
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+  
+      intervalRef.current = setInterval(() => {
+        if (event.target.getPlayerState() !== window.YT.PlayerState.PLAYING) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+          return;
+        }
+        const currentTime = event.target.getCurrentTime();
+        dispatch(setPlayerTime(currentTime));
         dispatch({
           type: WS_TO_SERVER_PLAYER_ACTION,
           payload: {
@@ -121,53 +146,31 @@ function Room() {
             time: currentTime,
           }
         });
-      }
-      // dispatch(setPlayerTime(currentTime));
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }
+      }, 1000);
 
-  const onPlayerStateChange = (event) => {
-    if (isHost) {
-      const playerStatus = event.data;
-      const currentPlayerTime = event.target.getCurrentTime();
-
-      if (playerStatus === window.YT.PlayerState.PLAYING) {
-        dispatch(setPlayerState("playing"));
-        dispatch(setPlayerTime(currentPlayerTime));
-        dispatch({
-          type: WS_TO_SERVER_PLAYER_ACTION,
-          payload: {
-            room_id: currentRoomFromURL,
-            action: "playing",
-            time: currentPlayerTime,
-          }
-        });
-
-      } else if (playerStatus === window.YT.PlayerState.PAUSED) {
-        dispatch(setPlayerState("paused"));
-        dispatch(setPlayerTime(currentPlayerTime));
-        dispatch({
-          type: WS_TO_SERVER_PLAYER_ACTION,
-          payload: {
-            room_id: currentRoomFromURL,
-            action: "paused",
-            time: currentPlayerTime,
-          }
-        });
-      } else if (playerStatus === window.YT.PlayerState.ENDED) {
-        dispatch(setPlayerState("ended"));
-        dispatch(setPlayerTime(0));
-        if (isHost) {
-          dispatch({
-            type: WS_TO_SERVER_PLAYER_ACTION,
-            payload: {
-              room_id: currentRoomFromURL,
-              action: "ended",
-              time: 0,
-            }
-          });
+    } else if (playerStatus === window.YT.PlayerState.PAUSED) {
+      dispatch(setPlayerState("paused"));
+      dispatch(setPlayerTime(currentPlayerTime));
+      dispatch({
+        type: WS_TO_SERVER_PLAYER_ACTION,
+        payload: {
+          room_id: currentRoomFromURL,
+          action: "paused",
+          time: currentPlayerTime,
         }
+      });
+    } else if (playerStatus === window.YT.PlayerState.ENDED) {
+      dispatch(setPlayerState("ended"));
+      dispatch(setPlayerTime(0));
+      if (isHost) {
+        dispatch({
+          type: WS_TO_SERVER_PLAYER_ACTION,
+          payload: {
+            room_id: currentRoomFromURL,
+            action: "ended",
+            time: 0,
+          }
+        });
       }
     }
   };
@@ -193,7 +196,7 @@ function Room() {
               opts={opts}
               onStateChange={onPlayerStateChange}
               onReady={onPlayerReady}
-              onPlay={onPlay}
+              // onPlay={onPlay}
             />
           </div>
         ) : (

@@ -10,8 +10,6 @@ import {
   addMessage,
   setMessages,
   setSystemMessage,
-  setIsHost,
-  setRoom
 } from "./store";
 
 function App() {

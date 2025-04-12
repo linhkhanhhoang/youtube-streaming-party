@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import YouTube from "react-youtube";
-import { Provider, useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   setPlayerState,
   setPlayerTime,
   setIsHost,
   setRoom
 } from "./store";
-import { WS_TO_SERVER_JOIN_ROOM, WS_TO_SERVER_SEND_MESSAGE, WS_TO_SERVER_SET_VIDEO, WS_TO_SERVER_PLAYER_ACTION } from "./Home"
+import { WS_TO_SERVER_SEND_MESSAGE, WS_TO_SERVER_SET_VIDEO, WS_TO_SERVER_PLAYER_ACTION } from "./Home"
 
 function Room() {
   const params = useParams();
@@ -16,6 +16,7 @@ function Room() {
   const currentRoomFromURL = params.roomId;
   const isHostFromURL = new URLSearchParams(location.search).get("host") === "true";
   const intervalRef = useRef(null);
+  const hasSyncedRef = useRef(false);
   
   const [message, setMessage] = useState("");
   const [requestVideoId, setRequestVideoId] = useState("");
@@ -37,6 +38,11 @@ function Room() {
 
   useEffect(() => {
     if (!player || !isPlayerReady || isHost) return;
+
+    if (!hasSyncedRef.current) {
+      hasSyncedRef.current = true;
+      return;
+    }
 
     if (playerState === "playing") {
       player.seekTo(currentTime || 0);
@@ -162,16 +168,15 @@ function Room() {
     } else if (playerStatus === window.YT.PlayerState.ENDED) {
       dispatch(setPlayerState("ended"));
       dispatch(setPlayerTime(0));
-      if (isHost) {
-        dispatch({
-          type: WS_TO_SERVER_PLAYER_ACTION,
-          payload: {
-            room_id: currentRoomFromURL,
-            action: "ended",
-            time: 0,
-          }
-        });
-      }
+      dispatch({
+        type: WS_TO_SERVER_PLAYER_ACTION,
+        payload: {
+          room_id: currentRoomFromURL,
+          action: "ended",
+          time: 0,
+        }
+      });
+      
     }
   };
 

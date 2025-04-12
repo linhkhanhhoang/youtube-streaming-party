@@ -14,7 +14,6 @@ import {
   setRoom
 } from "./store";
 
-// Main App component
 function App() {
   useEffect(() => {
     socket.on("action", (action) => {
@@ -70,13 +69,13 @@ function App() {
   return (
     <div className="app-layout">
       <header>
-        <h1>My App Layout</h1>
+        <h1>Youtube Streaming Party</h1>
       </header>
       <main>
         <Outlet />
       </main>
       <footer>
-        <p>&copy; 2023 My App</p>
+        <p>comp 352 by linh & evelyn</p>
       </footer>
     </div>
   );

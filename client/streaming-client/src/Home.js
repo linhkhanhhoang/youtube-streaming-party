@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Provider, useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 export const WS_TO_SERVER_JOIN_ROOM = "WS_TO_SERVER_JOIN_ROOM";
 export const WS_TO_SERVER_CREATE_ROOM = "WS_TO_SERVER_CREATE_ROOM";
@@ -12,6 +13,7 @@ function Home() {
     const [newRoom, setNewRoom] = useState("");
     const dispatch = useDispatch();
     const systemMessage = useSelector(state => state.systemMessage);
+    const navigate = useNavigate();
   
     const createRoom = () => {
       if (newRoom.trim()) {
@@ -40,14 +42,14 @@ function Home() {
     useEffect(() => {
       if (systemMessage && systemMessage.includes("Created and joined")) {
         const roomId = systemMessage.match(/'(.+)'/)[1];
-        window.open(`/room/${roomId}?host=true`, "_blank");
+        navigate(`/room/${roomId}?host=true`);
       }
   
       if (systemMessage && systemMessage.includes("Joined room")) {
         const roomId = systemMessage.match(/'(.+)'/)[1];
-        window.open(`/room/${roomId}`, "_blank");
+        navigate(`/room/${roomId}`);
       }
-    }, [systemMessage]);
+    }, [systemMessage, navigate]);
   
     return (
       <div className="app">

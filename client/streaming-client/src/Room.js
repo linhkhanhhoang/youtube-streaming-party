@@ -16,7 +16,6 @@ function Room() {
   const currentRoomFromURL = params.roomId;
   const isHostFromURL = new URLSearchParams(location.search).get("host") === "true";
   const intervalRef = useRef(null);
-  const hasSyncedRef = useRef(false);
   
   const [message, setMessage] = useState("");
   const [requestVideoId, setRequestVideoId] = useState("");
@@ -39,19 +38,17 @@ function Room() {
   useEffect(() => {
     if (!player || !isPlayerReady || isHost) return;
 
-    if (!hasSyncedRef.current) {
-      hasSyncedRef.current = true;
-      return;
-    }
-
-    if (playerState === "playing") {
-      player.seekTo(currentTime || 0);
-      player.playVideo();
-    } else if (playerState === "paused") {
-      player.seekTo(currentTime || 0);
-      player.pauseVideo();
-    }
-  }, [playerState, currentTime]);
+    const delay = setTimeout(() => {
+      if (playerState === "playing") {
+        player.seekTo(currentTime || 0);
+        player.playVideo();
+      } else if (playerState === "paused") {
+        player.seekTo(currentTime || 0);
+        player.pauseVideo();
+      }
+    }, 800);
+    return () => clearTimeout(delay);
+  }, [player, playerState, currentTime]);
 
 
   const extractYouTubeID = (url) => {
@@ -112,14 +109,10 @@ function Room() {
     setPlayer(event.target);
     setIsPlayerReady(true);
     if (playerState === "playing") {
-      if (currentTime > 0) {
-        event.target.seekTo(currentTime);
-        event.target.playVideo();
-      } else {
-        console.log("Waiting for currentTime sync before playing");
-      }
-    } else if (playerState === "paused" && currentTime > 0) {
-      event.target.seekTo(currentTime);
+      event.target.seekTo(currentTime || 0);
+      event.target.playVideo();
+    } else if (playerState === "paused") {
+      event.target.seekTo(currentTime || 0);
       event.target.pauseVideo();
     }
   };
@@ -132,6 +125,7 @@ function Room() {
     if (playerStatus === window.YT.PlayerState.PLAYING) {
       dispatch(setPlayerState("playing"));
       dispatch(setPlayerTime(currentPlayerTime));
+
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
@@ -142,6 +136,7 @@ function Room() {
           intervalRef.current = null;
           return;
         }
+
         const currentTime = event.target.getCurrentTime();
         dispatch(setPlayerTime(currentTime));
         dispatch({
@@ -197,6 +192,7 @@ function Room() {
         {videoId ? (
           <div className="video-player">
             <YouTube
+              key={videoId}
               videoId={videoId}
               opts={opts}
               onStateChange={onPlayerStateChange}

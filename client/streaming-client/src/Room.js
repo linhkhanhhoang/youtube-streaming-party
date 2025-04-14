@@ -237,6 +237,8 @@ function Room() {
         </div>
       </div>
 
+      <div style={{ height: "10px" }}></div>
+
       {isHost && (
         <div className="video-controls">
           <input

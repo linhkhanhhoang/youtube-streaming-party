@@ -73,7 +73,7 @@ function App() {
         <Outlet />
       </main>
       <footer>
-        <p>comp 352 by linh & evelyn</p>
+        <p>COMP 352 by Linh & Evelyn</p>
       </footer>
     </div>
   );

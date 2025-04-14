@@ -8,13 +8,14 @@ Follow these instructions to run the client and server locally.
 
    ```
    cd client/streaming-client
-   npm install
    npm install react-router-dom
    npm install react-youtube
    npm install @reduxjs/toolkit
    npm install react-redux
    npm install --save redux-socket.io
    npm install socket.io-client
+   npm install
+   
    ```
 
 ### 2. Setting Up the Python WebSocket Server
@@ -24,5 +25,7 @@ Follow these instructions to run the client and server locally.
     python3 -m venv venv
     source venv/bin/activate
     pip install websockets
+    pip install aiohttp
+    pip install python-socketio
     python3 server.py
     ```

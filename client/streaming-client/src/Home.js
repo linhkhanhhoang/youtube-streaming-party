@@ -52,32 +52,37 @@ function Home() {
     }, [systemMessage, navigate]);
   
     return (
-      <div className="app">
-        <h1>YouTube Sync</h1>
+      <div className="home-container">
         
-        <div className="join-section">
-          <h2>Join a Room</h2>
-          <input
-            type="text"
-            placeholder="Enter room name"
-            value={room}
-            onChange={(e) => setRoomInput(e.target.value)}
-          />
-          <button onClick={joinRoom}>Join Room</button>
+        <div className="room-section">
+          <div className="room-box">
+            <h2>Join a Room</h2>
+            <input
+              type="text"
+              placeholder="Enter room name"
+              value={room}
+              onChange={(e) => setRoomInput(e.target.value)}
+            />
+            <button onClick={joinRoom}>Join Room</button>
+          </div>
+
+          <div className="room-box">
+            <h2>Create a Room</h2>
+            <input
+              type="text"
+              placeholder="Enter room name"
+              value={newRoom}
+              onChange={(e) => setNewRoom(e.target.value)}
+            />
+            <button onClick={createRoom}>Create Room</button>
+          </div>
         </div>
   
-        <div className="create-section">
-          <h2>Create a Room</h2>
-          <input
-            type="text"
-            placeholder="Enter room name"
-            value={newRoom}
-            onChange={(e) => setNewRoom(e.target.value)}
-          />
-          <button onClick={createRoom}>Create Room</button>
-        </div>
-  
-        {systemMessage && <p className="system-message">{systemMessage}</p>}
+        {systemMessage && (
+          <div className="status-box">
+            <p>{systemMessage}</p>
+          </div>
+        )}
       </div>
     );
 }

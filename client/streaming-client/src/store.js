@@ -1,6 +1,18 @@
 import { configureStore, createSlice } from "@reduxjs/toolkit";
 import socket from "./socket";
 
+/**
+ * This file sets up the global state management for the app using Redux Toolkit.
+ * 
+ * Key Features:
+ * - Uses a single `appSlice` to manage application state, including:
+ *   - Room info, host status, messages, video ID, playback state, current time, and system messages.
+ * - Includes custom `socketMiddleware` to intercept and emit WebSocket events 
+ *   for all dispatched actions prefixed with `WS_TO_SERVER_`.
+ * 
+ * This allows components to dispatch actions as usual while automatically
+ * sending relevant ones to the server over WebSockets for real-time sync.
+ */
 const socketMiddleware = (socket) => (store) => (next) => (action) => {
   if (action.type.startsWith('WS_TO_SERVER_')) {
     socket.emit(action.type, action);

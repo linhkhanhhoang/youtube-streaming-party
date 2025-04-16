@@ -4,6 +4,20 @@ import re
 from aiohttp import web
 import socketio
 
+"""
+This server manages real-time room-based communication for the YouTube group watch app.
+
+Built with:
+- `aiohttp` for the web server
+- `python-socketio` for asynchronous WebSocket communication
+
+Core Features:
+- Handles room creation and joining (with host/client distinction)
+- Stores and synchronizes video state (video ID, playback status, time)
+- Relays chat messages between users in the same room
+- Ensures non-hosts sync with the host's video on join
+- Emits structured Redux-compatible actions back to clients for store updates
+"""
 sio = socketio.AsyncServer(cors_allowed_origins='*')
 app = web.Application()
 sio.attach(app)
@@ -83,13 +97,13 @@ async def send_message(sid, data):
     message = payload.get("message")
     
     if room_id and message and room_id in rooms:
-        sender = "Host" if sid == rooms[room_id]["host"] else "User"
+        # sender = "Host" if sid == rooms[room_id]["host"] else "User"
 
         for client_sid in rooms[room_id]["clients"]:
             if client_sid != sid:
                 await sio.emit("action", {
                     "type": "ADD_MESSAGE", 
-                    "payload": {"sender": sender, "message": message}
+                    "payload": {"sender": client_sid, "message": message}
                 }, room=client_sid)
         
         await sio.emit("action", {

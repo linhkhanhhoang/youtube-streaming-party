@@ -1,6 +1,5 @@
-// App.js
-import React, { useState, useEffect } from "react";
-import { useParams, Outlet } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Outlet } from "react-router-dom";
 import store from "./store";
 import socket from './socket';
 import {
@@ -8,10 +7,21 @@ import {
   setPlayerState,
   setPlayerTime,
   addMessage,
-  setMessages,
   setSystemMessage,
 } from "./store";
 
+/**
+ * This is the main application layout component for the YouTube Streaming Party app.
+ * 
+ * Responsibilities:
+ * - Sets up and manages WebSocket event listeners on mount.
+ * - Dispatches Redux actions based on socket events received from the server.
+ * - Handles connection status logs and error reporting.
+ * - Provides a shared layout with header, main content (via <Outlet />), and footer.
+ * 
+ * This component wraps around all route-level views and ensures that real-time updates 
+ * are propagated globally.
+ */
 function App() {
   useEffect(() => {
     socket.on("action", (action) => {
@@ -19,11 +29,9 @@ function App() {
       if (action.type && action.payload !== undefined) {
         switch(action.type) {
           case "SET_VIDEO":
-            console.log("passed frontend")
             store.dispatch(setVideo(action.payload));
             break;
           case "SET_PLAYER_STATE":
-            console.log(action.payload);
             store.dispatch(setPlayerState(action.payload));
             break;
           case "SET_PLAYER_TIME":
@@ -31,9 +39,6 @@ function App() {
             break;
           case "ADD_MESSAGE":
             store.dispatch(addMessage(action.payload));
-            break;
-          case "SET_MESSAGES":
-            store.dispatch(setMessages(action.payload));
             break;
           case "SET_SYSTEM_MESSAGE":
             store.dispatch(setSystemMessage(action.payload));

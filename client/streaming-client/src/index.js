@@ -9,6 +9,14 @@ import store from './store';
 import Home from "./Home"
 import Room from "./Room"
 
+/**
+ * This file bootstraps the React app and defines the main routing structure.
+ * 
+ * Key Components:
+ * - Uses `<Provider>` to supply the Redux store globally.
+ * - Uses `<Router>` with nested `<Routes>` to manage navigation between Home and Room wrapped by App.
+ */
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

@@ -10,6 +10,15 @@ import {
 } from "./store";
 import { WS_TO_SERVER_SEND_MESSAGE, WS_TO_SERVER_SET_VIDEO, WS_TO_SERVER_PLAYER_ACTION } from "./Home"
 
+/**
+ * Handles real-time YouTube video syncing and messaging for a specific room.
+ * 
+ * Responsibilities:
+ * - Syncs video state across clients (play, pause, seek, end).
+ * - Allows host to set YouTube videos.
+ * - Manages chat messages for the room.
+ * - Updates Redux store and communicates with the server via WebSocket events.
+ */
 function Room() {
   const params = useParams();
   const location = useLocation();
@@ -30,11 +39,13 @@ function Room() {
   const playerState = useSelector(state => state.playerState);
   const currentTime = useSelector(state => state.currentTime);
 
+  // On component mount: sets the room ID and whether the user is host based on the URL.
   useEffect(() => {
     dispatch(setRoom(currentRoomFromURL));
     dispatch(setIsHost(isHostFromURL));
   }, [dispatch, currentRoomFromURL, isHostFromURL]);
 
+  // Syncs the player's state (seek and play/pause) for non-host clients once the player is ready.
   useEffect(() => {
     if (!player || !isPlayerReady || isHost) return;
 
@@ -50,7 +61,7 @@ function Room() {
     return () => clearTimeout(delay);
   }, [player, playerState, currentTime]);
 
-
+  // Extracts a valid YouTube video ID from various YouTube URL formats or raw IDs.
   const extractYouTubeID = (url) => {
     const patterns = [
       /(?:https?:\/\/)?(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-]{11})(?:[&?].+)?/,
@@ -72,6 +83,7 @@ function Room() {
     return null;
   };
 
+  // Sends a typed chat message to the server via WebSocket.
   const sendMessage = () => {
     if (message.trim()) {
       dispatch({
@@ -82,6 +94,7 @@ function Room() {
     }
   };
 
+  // Validates and sends a YouTube video ID to the server (host-only action).
   const requestVideo = () => {
     if (requestVideoId) {
       const videoIdValue = extractYouTubeID(requestVideoId);
@@ -105,6 +118,7 @@ function Room() {
     }
   };
 
+  // Called when the YouTube player is ready; syncs it with current video state and time.
   const onPlayerReady = (event) => {
     setPlayer(event.target);
     setIsPlayerReady(true);
@@ -117,6 +131,7 @@ function Room() {
     }
   };
 
+  // Called whenever the YouTube player state changes; only the host dispatches playback updates.
   const onPlayerStateChange = (event) => {
     if (!isHost) return;
     const playerStatus = event.data;
@@ -197,7 +212,6 @@ function Room() {
               opts={opts}
               onStateChange={onPlayerStateChange}
               onReady={onPlayerReady}
-              // onPlay={onPlay}
             />
           </div>
         ) : (

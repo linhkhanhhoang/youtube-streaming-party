@@ -8,6 +8,16 @@ export const WS_TO_SERVER_SEND_MESSAGE = "WS_TO_SERVER_SEND_MESSAGE";
 export const WS_TO_SERVER_SET_VIDEO = "WS_TO_SERVER_SET_VIDEO";
 export const WS_TO_SERVER_PLAYER_ACTION = "WS_TO_SERVER_PLAYER_ACTION";
 
+/**
+ * This is the landing page for the YouTube Streaming Party app.
+ * 
+ * Responsibilities:
+ * - Allows users to join an existing room or create a new room by name.
+ * - Dispatches WebSocket actions to the server (`JOIN_ROOM` and `CREATE_ROOM`).
+ * - Listens for `systemMessage` updates from the Redux store to determine room join success.
+ * - Automatically redirects users to the appropriate `/room/:room_id` route upon success.
+ * - Displays a system status message (e.g., success or error feedback from server).
+ */
 function Home() {
     const [room, setRoomInput] = useState("");
     const [newRoom, setNewRoom] = useState("");

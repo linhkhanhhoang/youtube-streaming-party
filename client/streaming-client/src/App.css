@@ -49,22 +49,53 @@
   color: gray;
 }
 
-.room-list {
-  margin-top: 30px;
+.room-preview-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+  padding: 0 16px;
 }
 
-.room-list ul {
-  list-style-type: none;
-  padding: 0;
+.room-preview-card {
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  aspect-ratio: 1 / 1; /* ensures a square shape */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
 }
 
-.room-list li button {
-  margin: 8px;
-  padding: 10px 20px;
-  font-size: 18px;
-  background-color: #90C67C;
+.room-preview-card:hover {
+  transform: scale(1.03);
+}
+
+.room-info h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: bold;
+  word-break: break-word;
+}
+
+.room-info p {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 4px 0 0 0;
+}
+
+.room-preview-card button {
+  padding: 6px 10px;
+  background-color: #3b82f6;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
+}
+
+.room-preview-card button:hover {
+  background-color: #2563eb;
 }

@@ -30,7 +30,7 @@ const appSlice = createSlice({
     playerState: "paused",
     currentTime: 0,
     systemMessage: null,
-    existingRooms: []
+    roomList: {}
   },
   reducers: {
     setRoom: (state, action) => { state.room = action.payload },
@@ -41,7 +41,7 @@ const appSlice = createSlice({
     setPlayerState: (state, action) => { state.playerState = action.payload },
     setPlayerTime: (state, action) => { state.currentTime = action.payload },
     setSystemMessage: (state, action) => { state.systemMessage = action.payload },
-    setExistingRooms: (state, action) => { state.existingRooms = action.payload }
+    getRoomList: (state, action) => { state.roomList = action.payload },
   }
 });
 
@@ -54,7 +54,7 @@ export const {
   setPlayerState,
   setPlayerTime,
   setSystemMessage,
-  setExistingRooms
+  getRoomList
 } = appSlice.actions;
 
 const store = configureStore({

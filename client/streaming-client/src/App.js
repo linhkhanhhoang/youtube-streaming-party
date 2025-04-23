@@ -8,6 +8,7 @@ import {
   setPlayerTime,
   addMessage,
   setSystemMessage,
+  getRoomList
 } from "./store";
 
 /**
@@ -42,6 +43,9 @@ function App() {
             break;
           case "SET_SYSTEM_MESSAGE":
             store.dispatch(setSystemMessage(action.payload));
+            break;
+          case "GET_ROOM_LIST":
+            store.dispatch(getRoomList(action.payload));
             break;
           default:
             console.log("Unhandled action type:", action.type);

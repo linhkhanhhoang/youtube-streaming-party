@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { setExistingRooms } from "./store";
 import './App.css';
 
 export const WS_TO_SERVER_JOIN_ROOM = "WS_TO_SERVER_JOIN_ROOM";
@@ -9,6 +8,7 @@ export const WS_TO_SERVER_CREATE_ROOM = "WS_TO_SERVER_CREATE_ROOM";
 export const WS_TO_SERVER_SEND_MESSAGE = "WS_TO_SERVER_SEND_MESSAGE";
 export const WS_TO_SERVER_SET_VIDEO = "WS_TO_SERVER_SET_VIDEO";
 export const WS_TO_SERVER_PLAYER_ACTION = "WS_TO_SERVER_PLAYER_ACTION";
+export const WS_TO_SERVER_GET_ROOMS = "WS_TO_SERVER_GET_ROOMS";
 
 /**
  * This is the landing page for the YouTube Streaming Party app.
@@ -25,6 +25,7 @@ function Home() {
     const [newRoom, setNewRoom] = useState("");
     const dispatch = useDispatch();
     const systemMessage = useSelector(state => state.systemMessage);
+    const roomList = useSelector(state => state.roomList);
     const navigate = useNavigate();
     const existingRooms = useSelector(state => state.existingRooms);
   
@@ -52,10 +53,22 @@ function Home() {
       }
     };
 
+    const joinRoomHome = (roomDisplay) => {
+      if (roomDisplay) {
+        dispatch({ 
+          type: WS_TO_SERVER_JOIN_ROOM, 
+          payload: { room_id: roomDisplay.trim() } 
+        });
+        setRoomInput("");
+      } else {
+        alert("Please enter a room name.");
+      }
+    };
+  
     useEffect(() => {
-      dispatch({ type: "WS_TO_SERVER_GET_ROOMS" });
+      dispatch({ type: WS_TO_SERVER_GET_ROOMS });
     }, [dispatch]);
-    
+
     useEffect(() => {
       if (systemMessage && systemMessage.includes("Created and joined")) {
         const roomId = systemMessage.match(/'(.+)'/)[1];
@@ -101,34 +114,20 @@ function Home() {
           </div>
         )}
 
-        {existingRooms.length > 0 && (
-          <div className="room-box">
-            <h2>Existing Rooms</h2>
-            <ul style={{ listStyle: "none", padding: 0 }}>
-              {existingRooms.map((r, idx) => (
-                <li key={idx}>
-                  <button
-                    onClick={() =>
-                      dispatch({ type: WS_TO_SERVER_JOIN_ROOM, payload: { room_id: r } })
-                    }
-                    style={{
-                      background: "#E1EEBC",
-                      border: "2px solid #328E6E",
-                      borderRadius: "8px",
-                      padding: "10px 20px",
-                      margin: "6px",
-                      fontSize: "18px",
-                      color: "#328E6E",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Join "{r}"
-                  </button>
-                </li>
-              ))}
-            </ul>
+        {roomList && (
+          <div className="room-preview-list">
+            {Object.entries(roomList).map(([roomId, videoId]) => (
+              <div key={roomId} className="room-preview-card">
+                <div className="room-info">
+                  <h4>{roomId}</h4>
+                  <p>Video ID: {videoId}</p>
+                </div>
+                <button onClick={() => joinRoomHome(roomId)}>Join Room</button>
+              </div>
+            ))}
           </div>
         )}
+
       </div>
     );
 }

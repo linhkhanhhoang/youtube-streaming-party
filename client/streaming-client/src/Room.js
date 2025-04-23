@@ -8,7 +8,8 @@ import {
   setIsHost,
   setRoom
 } from "./store";
-import { WS_TO_SERVER_SEND_MESSAGE, WS_TO_SERVER_SET_VIDEO, WS_TO_SERVER_PLAYER_ACTION } from "./Home"
+import { WS_TO_SERVER_SEND_MESSAGE, WS_TO_SERVER_SET_VIDEO, WS_TO_SERVER_PLAYER_ACTION } from "./Home";
+// import "./App.css";
 
 /**
  * Handles real-time YouTube video syncing and messaging for a specific room.
@@ -234,8 +235,8 @@ function Room() {
               )
             )}
           </div>
-
-          <div className="chat-input">
+        </div>
+        <div className="chat-input">
             <input
               type="text"
               placeholder="Type a message..."
@@ -244,7 +245,6 @@ function Room() {
             />
             <button onClick={sendMessage}>Send</button>
           </div>
-        </div>
       </div>
 
       <div style={{ height: "10px" }}></div>

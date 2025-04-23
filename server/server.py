@@ -152,9 +152,12 @@ async def player_action(sid, data):
                     await sio.emit("action", {"type": "SET_PLAYER_TIME", "payload": time}, room=client_sid)
 
 @sio.on("WS_TO_SERVER_GET_ROOMS")
-async def get_rooms(sid, data=None):
-    room_list = list(rooms.keys())
-    await sio.emit("ROOM_LIST", room_list, room=sid)
+async def get_rooms(sid, data):
+    room_list = {}
+    for room_id, room_values in rooms.items():
+        room_list[room_id] = room_values["video_id"]
+
+    await sio.emit("action", {"type": "GET_ROOM_LIST", "payload": room_list}, room=sid)
 
 if __name__ == "__main__":
     web.run_app(app, host='localhost', port=5000)

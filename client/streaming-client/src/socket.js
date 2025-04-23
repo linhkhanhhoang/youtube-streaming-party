@@ -1,5 +1,6 @@
 import io from "socket.io-client";
-
+import store from "./store";
+import { setExistingRooms } from "./store";
 /**
  * Creates and configures a singleton WebSocket connection using `socket.io-client`.
  * 
@@ -20,5 +21,9 @@ const socket = io("http://localhost:5000", {
 });
 
 console.log('Socket initialized:', socket.id);
+
+socket.on("ROOM_LIST", (rooms) => {
+  store.dispatch(setExistingRooms(rooms));
+});
 
 export default socket;

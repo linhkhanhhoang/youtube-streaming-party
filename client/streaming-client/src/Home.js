@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { setExistingRooms } from "./store";
+import './App.css';
 
 export const WS_TO_SERVER_JOIN_ROOM = "WS_TO_SERVER_JOIN_ROOM";
 export const WS_TO_SERVER_CREATE_ROOM = "WS_TO_SERVER_CREATE_ROOM";
@@ -24,6 +26,7 @@ function Home() {
     const dispatch = useDispatch();
     const systemMessage = useSelector(state => state.systemMessage);
     const navigate = useNavigate();
+    const existingRooms = useSelector(state => state.existingRooms);
   
     const createRoom = () => {
       if (newRoom.trim()) {
@@ -48,7 +51,11 @@ function Home() {
         alert("Please enter a room name.");
       }
     };
-  
+
+    useEffect(() => {
+      dispatch({ type: "WS_TO_SERVER_GET_ROOMS" });
+    }, [dispatch]);
+    
     useEffect(() => {
       if (systemMessage && systemMessage.includes("Created and joined")) {
         const roomId = systemMessage.match(/'(.+)'/)[1];
@@ -91,6 +98,35 @@ function Home() {
         {systemMessage && (
           <div className="status-box">
             <p>{systemMessage}</p>
+          </div>
+        )}
+
+        {existingRooms.length > 0 && (
+          <div className="room-box">
+            <h2>Existing Rooms</h2>
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {existingRooms.map((r, idx) => (
+                <li key={idx}>
+                  <button
+                    onClick={() =>
+                      dispatch({ type: WS_TO_SERVER_JOIN_ROOM, payload: { room_id: r } })
+                    }
+                    style={{
+                      background: "#E1EEBC",
+                      border: "2px solid #328E6E",
+                      borderRadius: "8px",
+                      padding: "10px 20px",
+                      margin: "6px",
+                      fontSize: "18px",
+                      color: "#328E6E",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Join "{r}"
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>

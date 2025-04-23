@@ -6,7 +6,7 @@ import socket from "./socket";
  * 
  * Key Features:
  * - Uses a single `appSlice` to manage application state, including:
- *   - Room info, host status, messages, video ID, playback state, current time, and system messages.
+ *   - Room info, host status, messages, video ID, playback state, current time, system messages, and existing rooms.
  * - Includes custom `socketMiddleware` to intercept and emit WebSocket events 
  *   for all dispatched actions prefixed with `WS_TO_SERVER_`.
  * 
@@ -29,7 +29,8 @@ const appSlice = createSlice({
     videoId: null,
     playerState: "paused",
     currentTime: 0,
-    systemMessage: null
+    systemMessage: null,
+    existingRooms: []
   },
   reducers: {
     setRoom: (state, action) => { state.room = action.payload },
@@ -40,6 +41,7 @@ const appSlice = createSlice({
     setPlayerState: (state, action) => { state.playerState = action.payload },
     setPlayerTime: (state, action) => { state.currentTime = action.payload },
     setSystemMessage: (state, action) => { state.systemMessage = action.payload },
+    setExistingRooms: (state, action) => { state.existingRooms = action.payload }
   }
 });
 
@@ -52,6 +54,7 @@ export const {
   setPlayerState,
   setPlayerTime,
   setSystemMessage,
+  setExistingRooms
 } = appSlice.actions;
 
 const store = configureStore({

@@ -50,19 +50,18 @@
 }
 
 .room-preview-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  display: flex;
+  overflow-x: auto;
   gap: 16px;
+  padding: 16px;
   margin-top: 24px;
-  padding: 0 16px;
 }
-
 .room-preview-card {
   background-color: #ffffff;
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 12px;
-  aspect-ratio: 1 / 1; /* ensures a square shape */
+  aspect-ratio: 1 / 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
